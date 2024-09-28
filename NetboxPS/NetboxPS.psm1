@@ -1,4 +1,4 @@
-﻿
+
 
 #region File Add-NetboxDCIMFrontPort.ps1
 
@@ -466,7 +466,7 @@ function Clear-NetboxCredential {
 #region File Connect-NetboxAPI.ps1
 
 function Connect-NetboxAPI {
-<#
+    <#
     .SYNOPSIS
         Connects to the Netbox API and ensures Credential work properly
 
@@ -507,7 +507,7 @@ function Connect-NetboxAPI {
     param
     (
         [Parameter(ParameterSetName = 'Manual',
-                   Mandatory = $true)]
+            Mandatory = $true)]
         [string]$Hostname,
 
         [Parameter(Mandatory = $false)]
@@ -521,7 +521,7 @@ function Connect-NetboxAPI {
         [uint16]$Port = 443,
 
         [Parameter(ParameterSetName = 'URI',
-                   Mandatory = $true)]
+            Mandatory = $true)]
         [string]$URI,
 
         [Parameter(Mandatory = $false)]
@@ -579,7 +579,7 @@ function Connect-NetboxAPI {
     $null = Set-NetboxCredential -Credential $Credential
     $null = Set-NetboxHostScheme -Scheme $uriBuilder.Scheme
     $null = Set-NetboxHostPort -Port $uriBuilder.Port
-    $null = Set-NetboxInvokeParams -invokeParams $invokeParams
+    $null = Set-NetboxInvokeParams -InvokeParams $invokeParams
     $null = Set-NetboxTimeout -TimeoutSeconds $TimeoutSeconds
 
     try {
@@ -595,19 +595,19 @@ function Connect-NetboxAPI {
         }
     }
 
-#    Write-Verbose "Caching API definition"
-#    $script:NetboxConfig.APIDefinition = Get-NetboxAPIDefinition
-#
-#    if ([version]$script:NetboxConfig.APIDefinition.info.version -lt 2.8) {
-#        $Script:NetboxConfig.Connected = $false
-#        throw "Netbox version is incompatible with this PS module. Requires >=2.8.*, found version $($script:NetboxConfig.APIDefinition.info.version)"
+    #    Write-Verbose "Caching API definition"
+    #    $script:NetboxConfig.APIDefinition = Get-NetboxAPIDefinition
+    #
+    #    if ([version]$script:NetboxConfig.APIDefinition.info.version -lt 2.8) {
+    #        $Script:NetboxConfig.Connected = $false
+    #        throw "Netbox version is incompatible with this PS module. Requires >=2.8.*, found version $($script:NetboxConfig.APIDefinition.info.version)"
     #    }
 
     Write-Verbose "Checking Netbox version compatibility"
     $script:NetboxConfig.NetboxVersion = Get-NetboxVersion
-    if ([version]$script:NetboxConfig.NetboxVersion.'netbox-version' -lt 2.8) {
+    if ([version]$script:NetboxConfig.NetboxVersion.'netbox-version' -lt 4.0.0) {
         $Script:NetboxConfig.Connected = $false
-        throw "Netbox version is incompatible with this PS module. Requires >=2.8.*, found version $($script:NetboxConfig.NetboxVersion.'netbox-version')"
+        throw "Netbox version is incompatible with this PS module. Requires >=4.*.*, found version $($script:NetboxConfig.NetboxVersion.'netbox-version')"
     } else {
         Write-Verbose "Found compatible version [$($script:NetboxConfig.NetboxVersion.'netbox-version')]!"
     }
@@ -732,27 +732,6 @@ function Get-NetboxAPIDefinition {
     $URI = BuildNewURI -Segments $URIComponents.Segments -Parameters $URIComponents.Parameters -SkipConnectedCheck
 
     InvokeNetboxRequest -URI $URI
-}
-
-#endregion
-
-#region File GetNetboxAPIErrorBody.ps1
-
-
-function GetNetboxAPIErrorBody {
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [System.Net.HttpWebResponse]$Response
-    )
-
-    # This takes the $Response stream and turns it into a useable object... generally a string.
-    # If the body is JSON, you should be able to use ConvertFrom-Json
-
-    $reader = New-Object System.IO.StreamReader($Response.GetResponseStream())
-    $reader.BaseStream.Position = 0
-    $reader.DiscardBufferedData()
-    $reader.ReadToEnd()
 }
 
 #endregion
@@ -1066,14 +1045,6 @@ function Get-NetboxCircuitType {
             InvokeNetboxRequest -URI $URI -Raw:$Raw
         }
     }
-}
-
-#endregion
-
-#region File GetNetboxConfigVariable.ps1
-
-function GetNetboxConfigVariable {
-    return $script:NetboxConfig
 }
 
 #endregion
@@ -1397,100 +1368,6 @@ function Get-NetboxContactRole {
 
         default {
             $Segments = [System.Collections.ArrayList]::new(@('tenancy', 'contact-roles'))
-
-            $URIComponents = BuildURIComponents -URISegments $Segments -ParametersDictionary $PSBoundParameters
-
-            $uri = BuildNewURI -Segments $URIComponents.Segments -Parameters $URIComponents.Parameters
-
-            InvokeNetboxRequest -URI $uri -Raw:$Raw
-
-            break
-        }
-    }
-}
-
-#endregion
-
-#region File Get-NetboxContentType.ps1
-
-function Get-NetboxContentType {
-<#
-    .SYNOPSIS
-        Get a content type definition from Netbox
-
-    .DESCRIPTION
-        A detailed description of the Get-NetboxContentType function.
-
-    .PARAMETER Model
-        A description of the Model parameter.
-
-    .PARAMETER Id
-        The database ID of the contact role
-
-    .PARAMETER App_Label
-        A description of the App_Label parameter.
-
-    .PARAMETER Query
-        A standard search query that will match one or more contact roles.
-
-    .PARAMETER Limit
-        Limit the number of results to this number
-
-    .PARAMETER Offset
-        Start the search at this index in results
-
-    .PARAMETER Raw
-        Return the unparsed data from the HTTP request
-
-    .EXAMPLE
-        PS C:\> Get-NetboxContentType
-
-    .NOTES
-        Additional information about the function.
-#>
-
-    [CmdletBinding(DefaultParameterSetName = 'Query')]
-    param
-    (
-        [Parameter(ParameterSetName = 'Query',
-                   Position = 0)]
-        [string]$Model,
-
-        [Parameter(ParameterSetName = 'ByID')]
-        [uint64[]]$Id,
-
-        [Parameter(ParameterSetName = 'Query')]
-        [string]$App_Label,
-
-        [Parameter(ParameterSetName = 'Query')]
-        [string]$Query,
-
-        [Parameter(ParameterSetName = 'Query')]
-        [uint16]$Limit,
-
-        [Parameter(ParameterSetName = 'Query')]
-        [uint16]$Offset,
-
-        [switch]$Raw
-    )
-
-    switch ($PSCmdlet.ParameterSetName) {
-        'ById' {
-            foreach ($ContentType_ID in $Id) {
-                $Segments = [System.Collections.ArrayList]::new(@('extras', 'content-types', $ContentType_ID))
-
-                $URIComponents = BuildURIComponents -URISegments $Segments -ParametersDictionary $PSBoundParameters -SkipParameterByName 'Id'
-
-                $uri = BuildNewURI -Segments $URIComponents.Segments -Parameters $URIComponents.Parameters
-
-                InvokeNetboxRequest -URI $uri -Raw:$Raw
-            }
-
-            break
-        }
-
-        default {
-            $Segments = [System.Collections.ArrayList]::new(@('extras', 'content-types'))
 
             $URIComponents = BuildURIComponents -URISegments $Segments -ParametersDictionary $PSBoundParameters
 
@@ -2910,6 +2787,100 @@ function Get-NetboxIPAMVLAN {
 
 #endregion
 
+#region File Get-NetboxObjectType.ps1
+
+function Get-NetboxObjectType {
+    <#
+    .SYNOPSIS
+        Get a content type definition from Netbox
+
+    .DESCRIPTION
+        A detailed description of the Get-NetboxContentType function.
+
+    .PARAMETER Model
+        A description of the Model parameter.
+
+    .PARAMETER Id
+        The database ID of the contact role
+
+    .PARAMETER App_Label
+        A description of the App_Label parameter.
+
+    .PARAMETER Query
+        A standard search query that will match one or more contact roles.
+
+    .PARAMETER Limit
+        Limit the number of results to this number
+
+    .PARAMETER Offset
+        Start the search at this index in results
+
+    .PARAMETER Raw
+        Return the unparsed data from the HTTP request
+
+    .EXAMPLE
+        PS C:\> Get-NetboxContentType
+
+    .NOTES
+        Additional information about the function.
+#>
+
+    [CmdletBinding(DefaultParameterSetName = 'Query')]
+    param
+    (
+        [Parameter(ParameterSetName = 'Query',
+            Position = 0)]
+        [string]$Model,
+
+        [Parameter(ParameterSetName = 'ByID')]
+        [uint64[]]$Id,
+
+        [Parameter(ParameterSetName = 'Query')]
+        [string]$App_Label,
+
+        [Parameter(ParameterSetName = 'Query')]
+        [string]$Query,
+
+        [Parameter(ParameterSetName = 'Query')]
+        [uint16]$Limit,
+
+        [Parameter(ParameterSetName = 'Query')]
+        [uint16]$Offset,
+
+        [switch]$Raw
+    )
+
+    switch ($PSCmdlet.ParameterSetName) {
+        'ById' {
+            foreach ($ObjectType_ID in $Id) {
+                $Segments = [System.Collections.ArrayList]::new(@('extras', 'object-types', $ObjectType_ID))
+
+                $URIComponents = BuildURIComponents -URISegments $Segments -ParametersDictionary $PSBoundParameters -SkipParameterByName 'Id'
+
+                $uri = BuildNewURI -Segments $URIComponents.Segments -Parameters $URIComponents.Parameters
+
+                InvokeNetboxRequest -URI $uri -Raw:$Raw
+            }
+
+            break
+        }
+
+        default {
+            $Segments = [System.Collections.ArrayList]::new(@('extras', 'object-types'))
+
+            $URIComponents = BuildURIComponents -URISegments $Segments -ParametersDictionary $PSBoundParameters
+
+            $uri = BuildNewURI -Segments $URIComponents.Segments -Parameters $URIComponents.Parameters
+
+            InvokeNetboxRequest -URI $uri -Raw:$Raw
+
+            break
+        }
+    }
+}
+
+#endregion
+
 #region File Get-NetboxTag.ps1
 
 
@@ -3459,6 +3430,35 @@ function Get-NetboxVirtualMachineInterface {
 
         InvokeNetboxRequest -URI $uri -Raw:$Raw
     }
+}
+
+#endregion
+
+#region File GetNetboxAPIErrorBody.ps1
+
+
+function GetNetboxAPIErrorBody {
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.Net.HttpWebResponse]$Response
+    )
+
+    # This takes the $Response stream and turns it into a useable object... generally a string.
+    # If the body is JSON, you should be able to use ConvertFrom-Json
+
+    $reader = New-Object System.IO.StreamReader($Response.GetResponseStream())
+    $reader.BaseStream.Position = 0
+    $reader.DiscardBufferedData()
+    $reader.ReadToEnd()
+}
+
+#endregion
+
+#region File GetNetboxConfigVariable.ps1
+
+function GetNetboxConfigVariable {
+    return $script:NetboxConfig
 }
 
 #endregion
@@ -5294,7 +5294,7 @@ function Set-NetboxContactRole {
     .NOTES
         Additional information about the function.
 #>
-    
+
     [CmdletBinding(ConfirmImpact = 'Low',
                    SupportsShouldProcess = $true)]
     [OutputType([pscustomobject])]
@@ -5303,37 +5303,37 @@ function Set-NetboxContactRole {
         [Parameter(Mandatory = $true,
                    ValueFromPipelineByPropertyName = $true)]
         [uint64[]]$Id,
-        
+
         [Parameter(ValueFromPipelineByPropertyName = $true)]
         [ValidateLength(1, 100)]
         [string]$Name,
-        
+
         [ValidateLength(1, 100)]
         [ValidatePattern('^[-a-zA-Z0-9_]+$')]
         [string]$Slug,
-        
+
         [ValidateLength(0, 200)]
         [string]$Description,
-        
+
         [hashtable]$Custom_Fields,
-        
+
         [switch]$Raw
     )
-    
+
     begin {
         $Method = 'PATCH'
     }
-    
+
     process {
         foreach ($ContactRoleId in $Id) {
             $Segments = [System.Collections.ArrayList]::new(@('tenancy', 'contacts', $ContactRoleId))
-            
+
             $URIComponents = BuildURIComponents -URISegments $Segments.Clone() -ParametersDictionary $PSBoundParameters -SkipParameterByName 'Id', 'Force'
-            
+
             $URI = BuildNewURI -Segments $URIComponents.Segments
-            
+
             $CurrentContactRole = Get-NetboxContactRole -Id $ContactRoleId -ErrorAction Stop
-            
+
             if ($Force -or $PSCmdlet.ShouldProcess($CurrentContactRole.Name, 'Update contact role')) {
                 InvokeNetboxRequest -URI $URI -Method $Method -Body $URIComponents.Parameters -Raw:$Raw
             }

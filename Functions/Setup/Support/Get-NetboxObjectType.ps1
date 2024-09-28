@@ -1,5 +1,5 @@
-﻿function Get-NetboxContentType {
-<#
+﻿function Get-NetboxObjectType {
+    <#
     .SYNOPSIS
         Get a content type definition from Netbox
 
@@ -38,7 +38,7 @@
     param
     (
         [Parameter(ParameterSetName = 'Query',
-                   Position = 0)]
+            Position = 0)]
         [string]$Model,
 
         [Parameter(ParameterSetName = 'ByID')]
@@ -61,8 +61,8 @@
 
     switch ($PSCmdlet.ParameterSetName) {
         'ById' {
-            foreach ($ContentType_ID in $Id) {
-                $Segments = [System.Collections.ArrayList]::new(@('extras', 'content-types', $ContentType_ID))
+            foreach ($ObjectType_ID in $Id) {
+                $Segments = [System.Collections.ArrayList]::new(@('extras', 'object-types', $ObjectType_ID))
 
                 $URIComponents = BuildURIComponents -URISegments $Segments -ParametersDictionary $PSBoundParameters -SkipParameterByName 'Id'
 
@@ -75,7 +75,7 @@
         }
 
         default {
-            $Segments = [System.Collections.ArrayList]::new(@('extras', 'content-types'))
+            $Segments = [System.Collections.ArrayList]::new(@('extras', 'object-types'))
 
             $URIComponents = BuildURIComponents -URISegments $Segments -ParametersDictionary $PSBoundParameters
 
