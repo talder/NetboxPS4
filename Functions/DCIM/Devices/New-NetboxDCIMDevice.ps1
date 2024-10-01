@@ -10,7 +10,7 @@ function New-NetboxDCIMDevice {
         [string]$Name,
 
         [Parameter(Mandatory = $true)]
-        [object]$Device_Role,
+        [object]$Role,
 
         [Parameter(Mandatory = $true)]
         [object]$Device_Type,

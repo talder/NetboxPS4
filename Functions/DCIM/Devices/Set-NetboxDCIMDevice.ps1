@@ -4,12 +4,12 @@ function Set-NetboxDCIMDevice {
     param
     (
         [Parameter(Mandatory = $true,
-                   ValueFromPipelineByPropertyName = $true)]
+            ValueFromPipelineByPropertyName = $true)]
         [uint64[]]$Id,
 
         [string]$Name,
 
-        [object]$Device_Role,
+        [object]$Role,
 
         [object]$Device_Type,
 
